@@ -381,6 +381,31 @@
     .bottom-blessing { max-width: 100%; overflow-wrap: anywhere; color: var(--ink); font-size: 12px; line-height: 1.5; }
     .saved-note { color: var(--muted); font-size: 10px; }
 
+    .reset-dialog {
+      width: min(100% - 32px, 410px);
+      max-width: none;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: var(--ink);
+      background: color-mix(in srgb, var(--sky) 88%, var(--light) 12%);
+      box-shadow: 0 28px 90px rgba(5, 14, 18, .42), inset 0 1px rgba(255, 255, 255, .12);
+    }
+
+    .reset-dialog::backdrop { background: rgba(6, 13, 17, .64); backdrop-filter: blur(6px); }
+    .reset-dialog-content { padding: 28px 28px 22px; text-align: center; }
+    .reset-emblem { width: 42px; height: 42px; display: grid; place-items: center; margin: 0 auto 14px; border: 1px solid var(--line); border-radius: 50%; color: var(--light); font-size: 18px; }
+    .reset-title { margin: 0; color: var(--ink); font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; font-size: 22px; font-weight: 500; }
+    .reset-question { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .reset-blessing { margin: 18px 0 0; padding: 13px 10px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--light); font-size: 14px; line-height: 1.7; }
+    .reset-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+    .dialog-button { min-height: 42px; padding: 0 18px; border: 1px solid var(--line); border-radius: 22px; color: var(--ink); background: rgba(255, 255, 255, .06); cursor: pointer; font-size: 13px; transition: transform .18s ease, background .18s ease; }
+    .dialog-button:hover { background: rgba(255, 255, 255, .12); }
+    .dialog-button:active { transform: scale(.97); }
+    .dialog-confirm { border-color: transparent; color: #362a24; background: var(--light); font-weight: 650; }
+    .dialog-confirm:hover { background: color-mix(in srgb, var(--light) 86%, white); }
+
     .plus-one { position: absolute; top: 10%; left: 50%; z-index: 3; color: #ffe5ac; font-size: 23px; font-weight: 700; pointer-events: none; text-shadow: 0 2px 12px rgba(44, 20, 20, .48); animation: float-up .72s ease-out forwards; }
 
     @keyframes float-up {
@@ -428,6 +453,9 @@
       .scene-button { padding: 0 10px; }
       .instrument-panel { min-height: 300px; }
       .saved-note { font-size: 10px; }
+      .reset-dialog-content { padding: 24px 20px 18px; }
+      .reset-actions { gap: 8px; }
+      .dialog-button { padding: 0 14px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -510,6 +538,19 @@
     </footer>
   </main>
 
+  <dialog class="reset-dialog" id="resetDialog" aria-labelledby="resetTitle" aria-describedby="resetQuestion resetBlessing">
+    <div class="reset-dialog-content">
+      <span class="reset-emblem" aria-hidden="true">✦</span>
+      <h2 class="reset-title" id="resetTitle">重新计数</h2>
+      <p class="reset-question" id="resetQuestion">确定要将累计功德归零吗？</p>
+      <p class="reset-blessing" id="resetBlessing">积累善念，放下屠刀，阿弥陀佛</p>
+      <div class="reset-actions">
+        <button class="dialog-button" id="cancelReset" type="button" autofocus>再想一想</button>
+        <button class="dialog-button dialog-confirm" id="confirmReset" type="button">确认归零</button>
+      </div>
+    </div>
+  </dialog>
+
   <script>
     // 计数写入失败时仍维持本次访问内的功能，避免隐私模式或存储受限时按钮失效。
     const STORAGE_KEY = "electronic-woodfish-merit-v1";
@@ -519,6 +560,7 @@
     const soundWave = document.getElementById("soundWave");
     const soundSlash = document.getElementById("soundSlash");
     const sceneButtons = document.querySelectorAll("[data-scene-choice]");
+    const resetDialog = document.getElementById("resetDialog");
     const tapHint = document.querySelector(".tap-hint");
     const bottomBlessing = document.getElementById("bottomBlessing");
     const blessingOpeners = [
@@ -718,11 +760,25 @@
       soundToggle.title = soundEnabled ? "关闭声音" : "开启声音";
     });
 
+    // 原生 dialog 提供焦点管理与 Esc 关闭，只有明确确认才写入归零结果。
     document.getElementById("resetCount").addEventListener("click", () => {
-      if (!window.confirm("要把累计功德重新计为 0 吗？")) return;
+      if (!resetDialog.open) resetDialog.showModal();
+    });
+
+    document.getElementById("cancelReset").addEventListener("click", () => {
+      resetDialog.close();
+    });
+
+    document.getElementById("confirmReset").addEventListener("click", () => {
       merit = 0;
       renderMerit();
       persistMerit();
+      resetDialog.close();
+    });
+
+    resetDialog.addEventListener("click", (event) => {
+      // 允许轻点遮罩退出，但遮罩操作永远不触发计数修改。
+      if (event.target === resetDialog) resetDialog.close();
     });
 
     renderMerit();
