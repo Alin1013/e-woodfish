@@ -512,12 +512,22 @@
     const soundWave = document.getElementById("soundWave");
     const soundSlash = document.getElementById("soundSlash");
     const sceneButtons = document.querySelectorAll("[data-scene-choice]");
+    const tapHint = document.querySelector(".tap-hint");
+    const tapMessages = [
+      "善念 +1，心安 +1",
+      "愿你今天诸事顺遂",
+      "把烦恼轻轻放下",
+      "积一份善意，添一份从容",
+      "此刻安然，便是福气",
+      "愿努力都有回响"
+    ];
     let merit = readSavedMerit();
     let soundEnabled = true;
     let audioContext;
     const meritVoice = document.getElementById("meritVoice");
     let queuedVoiceCues = 0;
     let voicePlaying = false;
+    let tapMessageIndex = 0;
 
     // localStorage 可能被浏览器策略禁用，因此读取和写入都独立捕获异常。
     function readSavedMerit() {
@@ -628,6 +638,10 @@
       increment.setAttribute("aria-hidden", "true");
       woodfish.append(increment);
       increment.addEventListener("animationend", () => increment.remove(), { once: true });
+
+      // 用固定轮换而非随机抽取，快速连敲时也能稳定看到不同祝福语。
+      tapHint.textContent = tapMessages[tapMessageIndex];
+      tapMessageIndex = (tapMessageIndex + 1) % tapMessages.length;
     }
 
     woodfish.addEventListener("click", () => {
