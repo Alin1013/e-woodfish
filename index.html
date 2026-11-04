@@ -1,0 +1,379 @@
+<!doctype html>
+<!-- 单页电子木鱼：离线可用，功德数仅保存在当前浏览器。 -->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e8eee9">
+  <meta name="description" content="敲一下电子木鱼，积攒一点好心情。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='18' width='48' height='30' rx='15' fill='%238a432e'/%3E%3Cpath d='M25 32h14' stroke='%23f4d8ba' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <title>电子木鱼 · 积攒一点好心情</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: #19352e;
+      background: #e8eee9;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(ellipse at 50% 42%, rgba(255, 255, 255, .94), rgba(255, 255, 255, 0) 52%),
+        linear-gradient(145deg, #e8eee9 0%, #dce7e2 54%, #eef0e8 100%);
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(100%, 440px);
+      min-height: 620px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 24px 24px;
+      border: 1px solid rgba(255, 255, 255, .8);
+      border-radius: 24px;
+      background: rgba(250, 252, 249, .72);
+      box-shadow: 0 24px 70px rgba(34, 64, 54, .12), 0 2px 8px rgba(34, 64, 54, .06);
+      backdrop-filter: blur(14px);
+    }
+
+    .topline {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      margin: 0;
+      color: #29463e;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .sound-toggle, .reset-button {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid #dce5df;
+      border-radius: 50%;
+      color: #42645a;
+      background: #f8faf7;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease;
+    }
+
+    .sound-toggle:hover, .reset-button:hover { background: #edf3ee; }
+    .sound-toggle:active, .reset-button:active { transform: scale(.95); }
+    .sound-toggle svg { width: 20px; height: 20px; }
+
+    .count-area {
+      margin-top: 58px;
+      text-align: center;
+    }
+
+    .count-label {
+      margin: 0 0 8px;
+      color: #71847b;
+      font-size: 14px;
+    }
+
+    .count {
+      display: block;
+      min-width: 220px;
+      color: #1f4037;
+      font-size: 64px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+      line-height: 1.05;
+    }
+
+    .merit-unit { margin-left: 8px; color: #688076; font-size: 19px; font-weight: 500; }
+
+    .instrument-wrap {
+      width: 100%;
+      flex: 1;
+      min-height: 245px;
+      display: grid;
+      place-items: center;
+      padding: 12px 0;
+    }
+
+    .instrument {
+      position: relative;
+      width: 238px;
+      height: 174px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 48% 48% 43% 43% / 43% 43% 48% 48%;
+      background: linear-gradient(155deg, #a85d3c 0%, #8a432e 43%, #693526 100%);
+      box-shadow: inset 0 9px 10px rgba(255, 218, 174, .32), inset 0 -15px 18px rgba(47, 20, 16, .32), 0 20px 24px rgba(73, 49, 36, .2);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    /* 这两道高光模拟木器弧面；避免依赖外部图片，页面离线也能完整呈现。 */
+    .instrument::before {
+      position: absolute;
+      inset: 13px 18px 18px;
+      border: 1px solid rgba(255, 221, 184, .38);
+      border-radius: inherit;
+      content: "";
+    }
+
+    .instrument::after {
+      position: absolute;
+      width: 76px;
+      height: 31px;
+      border: 5px solid rgba(72, 31, 23, .78);
+      border-top: 0;
+      border-radius: 0 0 50% 50%;
+      content: "";
+      transform: translateY(5px);
+    }
+
+    .instrument-mark {
+      position: absolute;
+      top: 31px;
+      z-index: 1;
+      color: rgba(255, 230, 197, .75);
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .instrument:focus-visible, button:focus-visible { outline: 3px solid #da725a; outline-offset: 4px; }
+    .instrument:active, .instrument.is-struck { transform: translateY(5px) scale(.975); box-shadow: inset 0 5px 8px rgba(255, 218, 174, .24), inset 0 -10px 16px rgba(47, 20, 16, .34), 0 11px 15px rgba(73, 49, 36, .18); }
+
+    .tap-hint {
+      margin: -3px 0 0;
+      color: #71847b;
+      font-size: 14px;
+    }
+
+    .bottom-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 29px;
+      padding-top: 18px;
+      border-top: 1px solid #e0e8e2;
+    }
+
+    .saved-note { color: #8a9a92; font-size: 12px; }
+    .reset-button { min-width: auto; min-height: 38px; padding: 0 14px; border-radius: 20px; font-size: 13px; }
+
+    .plus-one {
+      position: absolute;
+      top: 19%;
+      left: 50%;
+      color: #cc6d45;
+      font-size: 23px;
+      font-weight: 700;
+      pointer-events: none;
+      animation: float-up .72s ease-out forwards;
+    }
+
+    @keyframes float-up {
+      from { opacity: 0; transform: translate(-50%, 12px) scale(.88); }
+      25% { opacity: 1; }
+      to { opacity: 0; transform: translate(-50%, -42px) scale(1.04); }
+    }
+
+    @media (max-height: 680px) {
+      .app { min-height: 560px; padding-top: 22px; }
+      .count-area { margin-top: 34px; }
+      .instrument-wrap { min-height: 215px; }
+    }
+
+    @media (max-width: 380px) {
+      body { padding: 12px; }
+      .app { min-height: 590px; padding-right: 18px; padding-left: 18px; }
+      .instrument { width: 216px; height: 158px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topline">
+      <h1 class="brand">电子木鱼</h1>
+      <button class="sound-toggle" id="soundToggle" type="button" aria-label="关闭声音" title="关闭声音">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z"></path>
+          <path id="soundWave" d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+          <path id="soundSlash" d="m18 9 4 6m0-6-4 6" style="display:none"></path>
+        </svg>
+      </button>
+    </header>
+
+    <section class="count-area" aria-label="功德计数">
+      <p class="count-label">累计功德</p>
+      <output class="count" id="meritCount" aria-live="polite">0<span class="merit-unit">功德</span></output>
+    </section>
+
+    <section class="instrument-wrap" aria-label="敲击木鱼">
+      <button class="instrument" id="woodfish" type="button" aria-label="敲一下木鱼，增加一点功德">
+        <span class="instrument-mark" aria-hidden="true">✦</span>
+      </button>
+    </section>
+
+    <p class="tap-hint">敲一下，积一点好心情</p>
+
+    <footer class="bottom-row">
+      <span class="saved-note">功德已保存在此浏览器</span>
+      <button class="reset-button" id="resetCount" type="button">重新计数</button>
+    </footer>
+  </main>
+
+  <!-- 与单页同目录发布，避免托管路径变化时语音资源丢失。 -->
+  <audio id="meritVoice" src="gongde-plus-one.wav" preload="auto" aria-hidden="true"></audio>
+
+  <script>
+    // 计数写入失败时仍维持本次访问内的功能，避免隐私模式或存储受限时按钮失效。
+    const STORAGE_KEY = "electronic-woodfish-merit-v1";
+    const countOutput = document.getElementById("meritCount");
+    const woodfish = document.getElementById("woodfish");
+    const soundToggle = document.getElementById("soundToggle");
+    const soundWave = document.getElementById("soundWave");
+    const soundSlash = document.getElementById("soundSlash");
+    let merit = readSavedMerit();
+    let soundEnabled = true;
+    let audioContext;
+    const meritVoice = document.getElementById("meritVoice");
+    let queuedVoiceCues = 0;
+    let voicePlaying = false;
+
+    // localStorage 可能被浏览器策略禁用，因此读取和写入都独立捕获异常。
+    function readSavedMerit() {
+      try {
+        const saved = Number.parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
+        return Number.isSafeInteger(saved) && saved > 0 ? saved : 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    // 通过 DOM 文本更新计数，防止大数字格式化后影响屏幕阅读器播报。
+    function renderMerit() {
+      countOutput.replaceChildren(document.createTextNode(merit.toLocaleString("zh-CN")));
+      const unit = document.createElement("span");
+      unit.className = "merit-unit";
+      unit.textContent = "功德";
+      countOutput.append(unit);
+    }
+
+    // 保存失败不回滚当前计数，让当次打开页面仍可继续使用。
+    function persistMerit() {
+      try {
+        localStorage.setItem(STORAGE_KEY, String(merit));
+      } catch {
+        // 浏览器存储不可用时，计数仍保存在当前页面内存中。
+      }
+    }
+
+    function playKnock() {
+      if (!soundEnabled) return;
+      try {
+        audioContext ||= new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(175, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(88, audioContext.currentTime + 0.11);
+        gain.gain.setValueAtTime(0.22, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.16);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.17);
+      } catch {
+        // 音频设备或浏览器不支持 Web Audio 时，敲击计数仍然正常。
+      }
+    }
+
+    // 快速连点时逐条播放语音，避免提示互相覆盖或丢失。
+    function playMeritVoice() {
+      if (!soundEnabled) return;
+      queuedVoiceCues += 1;
+      if (!voicePlaying) playNextMeritVoice();
+    }
+
+    // 播放失败时清空队列，保证后续点击仍可重新触发语音。
+    function playNextMeritVoice() {
+      if (!soundEnabled || queuedVoiceCues === 0) {
+        voicePlaying = false;
+        return;
+      }
+      queuedVoiceCues -= 1;
+      voicePlaying = true;
+      meritVoice.currentTime = 0;
+      meritVoice.play().catch(() => {
+        voicePlaying = false;
+        queuedVoiceCues = 0;
+      });
+    }
+
+    meritVoice.addEventListener("ended", playNextMeritVoice);
+
+    function showIncrement() {
+      const previous = document.querySelector(".plus-one");
+      previous?.remove();
+      const increment = document.createElement("span");
+      increment.className = "plus-one";
+      increment.textContent = "+1 功德";
+      increment.setAttribute("aria-hidden", "true");
+      woodfish.append(increment);
+      increment.addEventListener("animationend", () => increment.remove(), { once: true });
+    }
+
+    woodfish.addEventListener("click", () => {
+      // 单次点击同时更新本地计数、视觉反馈与可选音效。
+      if (merit < Number.MAX_SAFE_INTEGER) merit += 1;
+      renderMerit();
+      persistMerit();
+      showIncrement();
+      woodfish.classList.remove("is-struck");
+      requestAnimationFrame(() => woodfish.classList.add("is-struck"));
+      window.setTimeout(() => woodfish.classList.remove("is-struck"), 140);
+      playKnock();
+      playMeritVoice();
+    });
+
+    soundToggle.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      if (!soundEnabled) {
+        // 静音时立即中断正在播放的提示并丢弃积压，避免恢复声音后播出旧队列。
+        queuedVoiceCues = 0;
+        voicePlaying = false;
+        meritVoice.pause();
+        meritVoice.currentTime = 0;
+      }
+      soundWave.style.display = soundEnabled ? "" : "none";
+      soundSlash.style.display = soundEnabled ? "none" : "";
+      soundToggle.setAttribute("aria-label", soundEnabled ? "关闭声音" : "开启声音");
+      soundToggle.title = soundEnabled ? "关闭声音" : "开启声音";
+    });
+
+    document.getElementById("resetCount").addEventListener("click", () => {
+      if (!window.confirm("要把累计功德重新计为 0 吗？")) return;
+      merit = 0;
+      renderMerit();
+      persistMerit();
+    });
+
+    renderMerit();
+  </script>
+</body>
+</html>
