@@ -12,9 +12,15 @@
     :root {
       color-scheme: light;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      color: #19352e;
-      background: #e8eee9;
       font-synthesis: none;
+      --ink: #f7f1de;
+      --muted: rgba(247, 241, 222, .68);
+      --line: rgba(255, 255, 255, .2);
+      --sky: #192c3a;
+      --horizon: #31565a;
+      --ground: #243f3a;
+      --light: #f2c57e;
+      --scene-shadow: rgba(13, 27, 31, .4);
     }
 
     * { box-sizing: border-box; }
@@ -22,170 +28,357 @@
     body {
       min-width: 320px;
       min-height: 100vh;
+      min-height: 100svh;
       margin: 0;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background:
-        radial-gradient(ellipse at 50% 42%, rgba(255, 255, 255, .94), rgba(255, 255, 255, 0) 52%),
-        linear-gradient(145deg, #e8eee9 0%, #dce7e2 54%, #eef0e8 100%);
+      overflow-x: hidden;
+      color: var(--ink);
+      background: var(--sky);
+      transition: color .5s ease, background .5s ease;
+    }
+
+    body[data-scene="dawn"] {
+      color-scheme: light;
+      --ink: #243a39;
+      --muted: rgba(36, 58, 57, .68);
+      --line: rgba(36, 58, 57, .2);
+      --sky: #bbd8d2;
+      --horizon: #dfaa78;
+      --ground: #526f61;
+      --light: #bd684c;
+      --scene-shadow: rgba(45, 69, 62, .22);
+    }
+
+    body[data-scene="dusk"] {
+      --ink: #fff1dc;
+      --muted: rgba(255, 241, 220, .7);
+      --line: rgba(255, 241, 220, .24);
+      --sky: #402c48;
+      --horizon: #ba6556;
+      --ground: #374b48;
+      --light: #f4c675;
+      --scene-shadow: rgba(38, 24, 40, .38);
     }
 
     button { font: inherit; }
 
+    .landscape {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, var(--sky) 0%, color-mix(in srgb, var(--sky), var(--horizon) 35%) 43%, var(--horizon) 100%);
+      transition: background .6s ease;
+    }
+
+    /* 远山与水岸作为连续地形铺满画面，避免把氛围做成孤立装饰球。 */
+    .landscape::before {
+      position: absolute;
+      right: -8%;
+      bottom: -11%;
+      left: -8%;
+      height: 56%;
+      border-radius: 50% 50% 0 0 / 18% 18% 0 0;
+      background:
+        linear-gradient(180deg, transparent 0 34%, rgba(231, 205, 153, .13) 34.2% 34.7%, transparent 35%),
+        linear-gradient(175deg, #45665b 0%, var(--ground) 50%, #1a302e 100%);
+      box-shadow: 0 -35px 80px var(--scene-shadow);
+      content: "";
+      transition: background .6s ease;
+    }
+
+    .landscape::after {
+      position: absolute;
+      right: -6%;
+      bottom: 5%;
+      left: -6%;
+      height: 19%;
+      border-top: 1px solid rgba(255, 232, 186, .38);
+      border-radius: 50% 50% 0 0 / 12% 12% 0 0;
+      background: linear-gradient(180deg, rgba(191, 202, 159, .13), transparent 75%);
+      content: "";
+    }
+
+    .moon {
+      position: absolute;
+      top: 12%;
+      right: 17%;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #f2dfb0;
+      box-shadow: 0 0 0 12px rgba(242, 223, 176, .08), 0 0 44px rgba(242, 223, 176, .18);
+      transition: transform .5s ease, background .5s ease;
+    }
+
+    .moon::after {
+      position: absolute;
+      top: -5px;
+      left: 21px;
+      width: 67px;
+      height: 67px;
+      border-radius: 50%;
+      background: var(--sky);
+      content: "";
+      transition: background .5s ease;
+    }
+
+    body[data-scene="dawn"] .moon { transform: translateY(42vh); background: #fff1cf; }
+    body[data-scene="dawn"] .moon::after { background: var(--horizon); }
+    body[data-scene="dusk"] .moon { transform: translate(-30vw, 10vh); }
+
+    .temple {
+      position: absolute;
+      bottom: 28%;
+      left: 50%;
+      width: min(33vw, 360px);
+      height: 150px;
+      transform: translateX(-50%);
+      opacity: .46;
+      background: linear-gradient(90deg, transparent 0 13%, #182b2d 13% 17%, transparent 17% 83%, #182b2d 83% 87%, transparent 87%);
+    }
+
+    .temple::before {
+      position: absolute;
+      top: 13px;
+      right: -8%;
+      left: -8%;
+      height: 21px;
+      border-radius: 60% 60% 0 0;
+      background: #182b2d;
+      box-shadow: 0 -9px 0 -4px #182b2d;
+      content: "";
+    }
+
+    .temple::after {
+      position: absolute;
+      top: 43px;
+      right: 20%;
+      left: 20%;
+      height: 110px;
+      border: 8px solid #182b2d;
+      border-bottom: 0;
+      background: linear-gradient(90deg, transparent 0 45%, rgba(255, 223, 167, .24) 45% 55%, transparent 55%);
+      content: "";
+    }
+
+    .bamboo {
+      position: absolute;
+      bottom: 10%;
+      width: 1px;
+      height: 61%;
+      background: rgba(19, 44, 39, .68);
+      transform-origin: bottom;
+    }
+
+    .bamboo::before, .bamboo::after {
+      position: absolute;
+      right: 0;
+      width: 94px;
+      height: 27px;
+      border-top: 2px solid rgba(35, 71, 58, .78);
+      border-radius: 100% 0;
+      content: "";
+      transform: rotate(-24deg);
+    }
+
+    .bamboo::before { top: 25%; }
+    .bamboo::after { top: 42%; right: -82px; transform: scaleX(-1) rotate(-20deg); }
+    .bamboo-one { left: 7%; transform: rotate(-8deg); }
+    .bamboo-two { right: 8%; height: 52%; transform: rotate(9deg); }
+
+    .lantern {
+      position: absolute;
+      top: 24%;
+      width: 31px;
+      height: 52px;
+      border: 1px solid rgba(255, 223, 174, .65);
+      border-radius: 9px 9px 13px 13px;
+      background: linear-gradient(90deg, #ac4d43, #d57852 45%, #a8423d);
+      box-shadow: 0 0 30px rgba(245, 163, 97, .24);
+    }
+
+    .lantern::before {
+      position: absolute;
+      top: -15px;
+      left: 14px;
+      width: 1px;
+      height: 15px;
+      background: rgba(255, 223, 174, .65);
+      content: "";
+    }
+
+    .lantern::after {
+      position: absolute;
+      right: 5px;
+      bottom: -8px;
+      left: 5px;
+      height: 8px;
+      border-top: 1px solid rgba(255, 223, 174, .72);
+      content: "";
+    }
+
+    .lantern-one { left: 14%; }
+    .lantern-two { right: 14%; top: 31%; transform: scale(.78); }
+
     .app {
-      width: min(100%, 440px);
-      min-height: 620px;
+      position: relative;
+      width: min(100%, 1180px);
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 30px 24px 24px;
-      border: 1px solid rgba(255, 255, 255, .8);
-      border-radius: 24px;
-      background: rgba(250, 252, 249, .72);
-      box-shadow: 0 24px 70px rgba(34, 64, 54, .12), 0 2px 8px rgba(34, 64, 54, .06);
-      backdrop-filter: blur(14px);
+      padding: 32px clamp(22px, 5vw, 70px) 25px;
+      isolation: isolate;
     }
 
-    .topline {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .app::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0 0 0;
+      border-right: 1px solid rgba(255, 255, 255, .13);
+      border-left: 1px solid rgba(255, 255, 255, .13);
+      background: linear-gradient(90deg, rgba(19, 39, 41, .08), rgba(19, 39, 41, .18) 50%, rgba(19, 39, 41, .08));
+      content: "";
     }
 
-    .brand {
-      margin: 0;
-      color: #29463e;
-      font-size: 15px;
-      font-weight: 650;
-    }
+    .topline, .top-actions, .scene-picker, .bottom-row { display: flex; align-items: center; }
+    .topline { width: 100%; justify-content: space-between; }
+    .brand-lockup { display: flex; align-items: center; gap: 13px; }
 
-    .sound-toggle, .reset-button {
-      min-width: 44px;
-      min-height: 44px;
-      display: inline-grid;
-      place-items: center;
-      border: 1px solid #dce5df;
-      border-radius: 50%;
-      color: #42645a;
-      background: #f8faf7;
-      cursor: pointer;
-      transition: background .18s ease, transform .18s ease;
-    }
-
-    .sound-toggle:hover, .reset-button:hover { background: #edf3ee; }
-    .sound-toggle:active, .reset-button:active { transform: scale(.95); }
-    .sound-toggle svg { width: 20px; height: 20px; }
-
-    .count-area {
-      margin-top: 58px;
-      text-align: center;
-    }
-
-    .count-label {
-      margin: 0 0 8px;
-      color: #71847b;
-      font-size: 14px;
-    }
-
-    .count {
-      display: block;
-      min-width: 220px;
-      color: #1f4037;
-      font-size: 64px;
-      font-variant-numeric: tabular-nums;
-      font-weight: 650;
-      line-height: 1.05;
-    }
-
-    .merit-unit { margin-left: 8px; color: #688076; font-size: 19px; font-weight: 500; }
-
-    .instrument-wrap {
-      width: 100%;
-      flex: 1;
-      min-height: 245px;
+    .brand-seal {
+      width: 38px;
+      height: 38px;
       display: grid;
       place-items: center;
-      padding: 12px 0;
+      border: 1px solid rgba(255, 226, 179, .66);
+      border-radius: 50%;
+      color: #ffe2b3;
+      font-family: serif;
+      font-size: 18px;
     }
+
+    .brand { margin: 0; color: var(--ink); font-size: 16px; font-weight: 650; }
+    .brand-subtitle { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .top-actions { gap: 10px; }
+
+    .icon-button, .reset-button {
+      min-width: 43px;
+      min-height: 43px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--ink);
+      background: rgba(16, 33, 35, .17);
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease, border-color .18s ease;
+    }
+
+    .icon-button:hover, .reset-button:hover { background: rgba(255, 255, 255, .13); }
+    .icon-button:active, .reset-button:active { transform: scale(.95); }
+    .icon-button svg { width: 19px; height: 19px; }
+    .sound-toggle { width: 43px; }
+    .reset-button { min-width: 0; min-height: 38px; padding: 0 15px; border-radius: 19px; font-size: 13px; }
+
+    .stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(390px, 1.1fr);
+      align-items: center;
+      gap: 4vw;
+      padding: 40px 1vw 34px;
+    }
+
+    .practice { position: relative; z-index: 1; max-width: 520px; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--light); font-size: 12px; letter-spacing: 2px; }
+    .eyebrow::before { width: 29px; height: 1px; background: currentColor; content: ""; }
+    .practice-title { margin: 18px 0 10px; color: var(--ink); font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; font-size: clamp(38px, 5.2vw, 66px); font-weight: 500; line-height: 1.2; }
+    .practice-copy { max-width: 390px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.9; }
+
+    .count-area { margin-top: clamp(34px, 6vh, 66px); }
+    .count-label { margin: 0 0 11px; color: var(--muted); font-size: 13px; }
+    .count { display: flex; align-items: baseline; gap: 13px; color: var(--ink); font-size: clamp(48px, 6vw, 76px); font-variant-numeric: tabular-nums; font-weight: 550; line-height: 1; }
+    .merit-unit { color: var(--light); font-size: 16px; font-weight: 500; }
+    .count-divider { width: min(100%, 285px); height: 1px; margin: 20px 0 16px; background: linear-gradient(90deg, var(--light), transparent); opacity: .72; }
+    .merit-caption { margin: 0; color: var(--muted); font-size: 12px; }
+
+    .scene-control { margin-top: 34px; }
+    .scene-label { margin: 0 0 11px; color: var(--muted); font-size: 12px; }
+    .scene-picker { width: max-content; max-width: 100%; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 23px; background: rgba(16, 33, 35, .2); }
+    .scene-button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 19px; color: var(--muted); background: transparent; cursor: pointer; font-size: 12px; transition: color .2s ease, background .2s ease, box-shadow .2s ease; }
+    .scene-button[aria-pressed="true"] { color: #302f2a; background: #f2dfb0; box-shadow: 0 3px 12px rgba(11, 28, 29, .18); }
+
+    .instrument-panel { position: relative; min-height: 470px; display: grid; place-items: center; }
+    .instrument-panel::before {
+      position: absolute;
+      right: 7%;
+      bottom: 4%;
+      left: 7%;
+      height: 35%;
+      border-top: 1px solid rgba(245, 216, 169, .44);
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(228, 198, 144, .12), transparent 70%);
+      content: "";
+    }
+
+    .offering { position: relative; z-index: 1; width: min(100%, 470px); display: grid; justify-items: center; padding-bottom: 42px; }
+    .incense { position: absolute; top: 4%; left: 50%; height: 100px; display: flex; gap: 17px; transform: translateX(-50%); }
+    .incense span { width: 2px; height: 72px; border-radius: 50%; background: linear-gradient(180deg, transparent, rgba(244, 231, 202, .5), transparent); animation: incense-drift 4.8s ease-in-out infinite alternate; }
+    .incense span:nth-child(2) { height: 95px; animation-delay: -2.3s; }
+    .incense span:nth-child(3) { height: 62px; animation-delay: -1s; }
 
     .instrument {
       position: relative;
-      width: 238px;
-      height: 174px;
+      z-index: 2;
+      width: min(100%, 350px);
+      aspect-ratio: 1.38;
       display: grid;
       place-items: center;
-      border: 0;
+      margin-top: 45px;
+      border: 1px solid rgba(255, 213, 170, .38);
       border-radius: 48% 48% 43% 43% / 43% 43% 48% 48%;
-      background: linear-gradient(155deg, #a85d3c 0%, #8a432e 43%, #693526 100%);
-      box-shadow: inset 0 9px 10px rgba(255, 218, 174, .32), inset 0 -15px 18px rgba(47, 20, 16, .32), 0 20px 24px rgba(73, 49, 36, .2);
+      background: linear-gradient(155deg, #c98353 0%, #a6543b 33%, #773b30 70%, #58312d 100%);
+      box-shadow: inset 0 10px 12px rgba(255, 232, 192, .32), inset 0 -19px 25px rgba(44, 22, 24, .5), 0 28px 45px rgba(20, 28, 29, .34), 0 0 0 12px rgba(246, 218, 171, .045);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       transition: transform .12s ease, box-shadow .12s ease;
     }
 
-    /* 这两道高光模拟木器弧面；避免依赖外部图片，页面离线也能完整呈现。 */
+    /* 内外两道木纹轮廓突出木鱼主体，同时保持纯静态资源。 */
     .instrument::before {
       position: absolute;
-      inset: 13px 18px 18px;
-      border: 1px solid rgba(255, 221, 184, .38);
+      inset: 14px 19px 19px;
+      border: 1px solid rgba(255, 221, 184, .46);
       border-radius: inherit;
       content: "";
     }
 
     .instrument::after {
       position: absolute;
-      width: 76px;
-      height: 31px;
-      border: 5px solid rgba(72, 31, 23, .78);
+      width: 94px;
+      height: 38px;
+      border: 5px solid rgba(62, 29, 29, .82);
       border-top: 0;
       border-radius: 0 0 50% 50%;
       content: "";
-      transform: translateY(5px);
+      transform: translateY(7px);
     }
 
-    .instrument-mark {
-      position: absolute;
-      top: 31px;
-      z-index: 1;
-      color: rgba(255, 230, 197, .75);
-      font-size: 17px;
-      line-height: 1;
-    }
+    .instrument-mark { position: absolute; top: 20%; z-index: 1; color: rgba(255, 232, 194, .86); font-family: serif; font-size: 18px; }
+    .instrument:focus-visible, button:focus-visible { outline: 3px solid #f6d08a; outline-offset: 4px; }
+    .instrument:active, .instrument.is-struck { transform: translateY(6px) scale(.975); box-shadow: inset 0 6px 9px rgba(255, 218, 174, .24), inset 0 -12px 18px rgba(47, 20, 16, .4), 0 17px 27px rgba(20, 28, 29, .3), 0 0 0 12px rgba(246, 218, 171, .045); }
 
-    .instrument:focus-visible, button:focus-visible { outline: 3px solid #da725a; outline-offset: 4px; }
-    .instrument:active, .instrument.is-struck { transform: translateY(5px) scale(.975); box-shadow: inset 0 5px 8px rgba(255, 218, 174, .24), inset 0 -10px 16px rgba(47, 20, 16, .34), 0 11px 15px rgba(73, 49, 36, .18); }
+    .offering-rug { position: absolute; right: 4%; bottom: 2%; left: 4%; height: 23px; border: 1px solid rgba(244, 214, 169, .42); border-radius: 50%; background: linear-gradient(90deg, transparent, rgba(223, 197, 157, .2), transparent); }
+    .tap-hint { position: relative; z-index: 1; margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .tap-hint::before, .tap-hint::after { display: inline-block; width: 27px; height: 1px; margin: 0 12px 4px; background: var(--light); opacity: .7; content: ""; }
 
-    .tap-hint {
-      margin: -3px 0 0;
-      color: #71847b;
-      font-size: 14px;
-    }
+    .bottom-row { width: 100%; justify-content: space-between; padding-top: 16px; border-top: 1px solid var(--line); }
+    .saved-note { color: var(--muted); font-size: 11px; }
 
-    .bottom-row {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 29px;
-      padding-top: 18px;
-      border-top: 1px solid #e0e8e2;
-    }
-
-    .saved-note { color: #8a9a92; font-size: 12px; }
-    .reset-button { min-width: auto; min-height: 38px; padding: 0 14px; border-radius: 20px; font-size: 13px; }
-
-    .plus-one {
-      position: absolute;
-      top: 19%;
-      left: 50%;
-      color: #cc6d45;
-      font-size: 23px;
-      font-weight: 700;
-      pointer-events: none;
-      animation: float-up .72s ease-out forwards;
-    }
+    .plus-one { position: absolute; top: 10%; left: 50%; z-index: 3; color: #ffe5ac; font-size: 23px; font-weight: 700; pointer-events: none; text-shadow: 0 2px 12px rgba(44, 20, 20, .48); animation: float-up .72s ease-out forwards; }
 
     @keyframes float-up {
       from { opacity: 0; transform: translate(-50%, 12px) scale(.88); }
@@ -193,47 +386,116 @@
       to { opacity: 0; transform: translate(-50%, -42px) scale(1.04); }
     }
 
-    @media (max-height: 680px) {
-      .app { min-height: 560px; padding-top: 22px; }
-      .count-area { margin-top: 34px; }
-      .instrument-wrap { min-height: 215px; }
+    @keyframes incense-drift {
+      from { opacity: .22; transform: translate(-4px, 8px) scaleY(.82); }
+      to { opacity: .72; transform: translate(5px, -5px) scaleY(1.08); }
+    }
+
+    @media (max-width: 760px) {
+      .app { padding: 20px 20px 17px; }
+      .app::before { background: linear-gradient(180deg, rgba(19, 39, 41, .08), rgba(19, 39, 41, .16)); }
+      .stage { grid-template-columns: 1fr; gap: 0; padding: 30px 0 20px; }
+      .practice { max-width: none; text-align: center; }
+      .eyebrow { justify-content: center; }
+      .eyebrow::after { width: 29px; height: 1px; background: currentColor; content: ""; }
+      .practice-title { margin-top: 12px; font-size: 40px; }
+      .practice-copy { margin: 0 auto; font-size: 13px; }
+      .count-area { margin-top: 25px; }
+      .count { justify-content: center; font-size: 53px; }
+      .count-divider { margin: 14px auto 11px; }
+      .scene-control { margin-top: 20px; }
+      .scene-picker { margin: 0 auto; }
+      .instrument-panel { min-height: 330px; margin-top: 2px; }
+      .offering { max-width: 380px; padding-bottom: 27px; }
+      .instrument { width: min(78vw, 310px); margin-top: 37px; }
+      .incense { top: 1%; }
+      .moon { top: 11%; right: 11%; width: 54px; height: 54px; }
+      .moon::after { left: 16px; width: 52px; height: 52px; }
+      .temple { bottom: 25%; width: 46vw; transform: translateX(-50%) scale(.8); }
+      .lantern { top: 37%; transform: scale(.75); }
+      .lantern-two { top: 42%; transform: scale(.62); }
+      .bottom-row { padding-top: 12px; }
     }
 
     @media (max-width: 380px) {
-      body { padding: 12px; }
-      .app { min-height: 590px; padding-right: 18px; padding-left: 18px; }
-      .instrument { width: 216px; height: 158px; }
+      .app { padding-right: 15px; padding-left: 15px; }
+      .scene-button { padding: 0 10px; }
+      .instrument-panel { min-height: 300px; }
+      .saved-note { font-size: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
     }
   </style>
 </head>
-<body>
+<body data-scene="night">
+  <div class="landscape" aria-hidden="true">
+    <span class="moon"></span>
+    <span class="temple"></span>
+    <span class="bamboo bamboo-one"></span>
+    <span class="bamboo bamboo-two"></span>
+    <span class="lantern lantern-one"></span>
+    <span class="lantern lantern-two"></span>
+  </div>
+
   <main class="app">
     <header class="topline">
-      <h1 class="brand">电子木鱼</h1>
-      <button class="sound-toggle" id="soundToggle" type="button" aria-label="关闭声音" title="关闭声音">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M11 5 6 9H3v6h3l5 4z"></path>
-          <path id="soundWave" d="M15.5 8.5a5 5 0 0 1 0 7"></path>
-          <path id="soundSlash" d="m18 9 4 6m0-6-4 6" style="display:none"></path>
-        </svg>
-      </button>
+      <div class="brand-lockup">
+        <span class="brand-seal" aria-hidden="true">木</span>
+        <div>
+          <h1 class="brand">电子木鱼</h1>
+          <p class="brand-subtitle">一念清净，万般自在</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-button sound-toggle" id="soundToggle" type="button" aria-label="关闭声音" title="关闭声音">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4z"></path>
+            <path id="soundWave" d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+            <path id="soundSlash" d="m18 9 4 6m0-6-4 6" style="display:none"></path>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <section class="count-area" aria-label="功德计数">
-      <p class="count-label">累计功德</p>
-      <output class="count" id="meritCount" aria-live="polite">0<span class="merit-unit">功德</span></output>
-    </section>
+    <section class="stage">
+      <div class="practice">
+        <div class="eyebrow">静心片刻</div>
+        <h2 class="practice-title">听木鱼，<br>见本心。</h2>
+        <p class="practice-copy">让一声清响，替忙碌的日常留一点空白。每一次敲击，都为自己添一分安宁。</p>
 
-    <section class="instrument-wrap" aria-label="敲击木鱼">
-      <button class="instrument" id="woodfish" type="button" aria-label="敲一下木鱼，增加一点功德">
-        <span class="instrument-mark" aria-hidden="true">✦</span>
-      </button>
-    </section>
+        <section class="count-area" aria-label="功德计数">
+          <p class="count-label">今日所积</p>
+          <output class="count" id="meritCount" aria-live="polite">0<span class="merit-unit">功德</span></output>
+          <div class="count-divider" aria-hidden="true"></div>
+          <p class="merit-caption">心无所住，善念自生</p>
+        </section>
 
-    <p class="tap-hint">敲一下，积一点好心情</p>
+        <section class="scene-control" aria-label="选择庭院氛围">
+          <p class="scene-label">此刻的庭院</p>
+          <div class="scene-picker" role="group" aria-label="庭院氛围">
+            <button class="scene-button" type="button" data-scene-choice="dawn" aria-pressed="false">晨雾</button>
+            <button class="scene-button" type="button" data-scene-choice="dusk" aria-pressed="false">暮色</button>
+            <button class="scene-button" type="button" data-scene-choice="night" aria-pressed="true">夜禅</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="instrument-panel" aria-label="庭院中的木鱼">
+        <div class="offering">
+          <div class="incense" aria-hidden="true"><span></span><span></span><span></span></div>
+          <button class="instrument" id="woodfish" type="button" aria-label="敲一下木鱼，增加一点功德">
+            <span class="instrument-mark" aria-hidden="true">✦</span>
+          </button>
+          <p class="tap-hint">轻敲木鱼 · 积一份善念</p>
+          <span class="offering-rug" aria-hidden="true"></span>
+        </div>
+      </div>
+    </section>
 
     <footer class="bottom-row">
-      <span class="saved-note">功德已保存在此浏览器</span>
+      <span class="saved-note">功德只保存在此浏览器</span>
       <button class="reset-button" id="resetCount" type="button">重新计数</button>
     </footer>
   </main>
@@ -249,6 +511,7 @@
     const soundToggle = document.getElementById("soundToggle");
     const soundWave = document.getElementById("soundWave");
     const soundSlash = document.getElementById("soundSlash");
+    const sceneButtons = document.querySelectorAll("[data-scene-choice]");
     let merit = readSavedMerit();
     let soundEnabled = true;
     let audioContext;
@@ -327,6 +590,35 @@
 
     meritVoice.addEventListener("ended", playNextMeritVoice);
 
+    // 场景偏好也保存在本机，让页面下次打开仍回到用户选定的氛围。
+    function restoreScene() {
+      try {
+        const savedScene = localStorage.getItem("electronic-woodfish-scene-v1");
+        if (["dawn", "dusk", "night"].includes(savedScene)) setScene(savedScene);
+      } catch {
+        // 无本地存储权限时继续使用默认夜禅场景。
+      }
+    }
+
+    function setScene(scene) {
+      document.body.dataset.scene = scene;
+      sceneButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.sceneChoice === scene));
+      });
+    }
+
+    sceneButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const scene = button.dataset.sceneChoice;
+        setScene(scene);
+        try {
+          localStorage.setItem("electronic-woodfish-scene-v1", scene);
+        } catch {
+          // 场景仍可即时切换，只是不跨刷新保留。
+        }
+      });
+    });
+
     function showIncrement() {
       const previous = document.querySelector(".plus-one");
       previous?.remove();
@@ -374,6 +666,7 @@
     });
 
     renderMerit();
+    restoreScene();
   </script>
 </body>
 </html>
