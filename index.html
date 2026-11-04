@@ -375,8 +375,11 @@
     .tap-hint { position: relative; z-index: 1; margin: 7px 0 0; color: var(--muted); font-size: 13px; }
     .tap-hint::before, .tap-hint::after { display: inline-block; width: 27px; height: 1px; margin: 0 12px 4px; background: var(--light); opacity: .7; content: ""; }
 
-    .bottom-row { width: 100%; justify-content: space-between; padding-top: 16px; border-top: 1px solid var(--line); }
-    .saved-note { color: var(--muted); font-size: 11px; }
+    .bottom-row { width: 100%; justify-content: space-between; gap: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .bottom-messages { min-width: 0; display: grid; gap: 4px; }
+    .bottom-label { color: var(--muted); font-size: 10px; }
+    .bottom-blessing { max-width: 100%; overflow-wrap: anywhere; color: var(--ink); font-size: 12px; line-height: 1.5; }
+    .saved-note { color: var(--muted); font-size: 10px; }
 
     .plus-one { position: absolute; top: 10%; left: 50%; z-index: 3; color: #ffe5ac; font-size: 23px; font-weight: 700; pointer-events: none; text-shadow: 0 2px 12px rgba(44, 20, 20, .48); animation: float-up .72s ease-out forwards; }
 
@@ -415,6 +418,9 @@
       .lantern { top: 37%; transform: scale(.75); }
       .lantern-two { top: 42%; transform: scale(.62); }
       .bottom-row { padding-top: 12px; }
+      .bottom-messages { gap: 2px; }
+      .bottom-blessing { font-size: 11px; }
+      .saved-note { max-width: 98px; text-align: right; }
     }
 
     @media (max-width: 380px) {
@@ -495,13 +501,14 @@
     </section>
 
     <footer class="bottom-row">
-      <span class="saved-note">功德只保存在此浏览器</span>
+      <div class="bottom-messages" aria-live="polite">
+        <span class="bottom-label">此刻善念</span>
+        <span class="bottom-blessing" id="bottomBlessing">轻敲木鱼 · 积一份善念</span>
+        <span class="saved-note">功德只保存在此浏览器</span>
+      </div>
       <button class="reset-button" id="resetCount" type="button">重新计数</button>
     </footer>
   </main>
-
-  <!-- 与单页同目录发布，避免托管路径变化时语音资源丢失。 -->
-  <audio id="meritVoice" src="merit-message-01.wav" preload="auto" aria-hidden="true"></audio>
 
   <script>
     // 计数写入失败时仍维持本次访问内的功能，避免隐私模式或存储受限时按钮失效。
@@ -513,27 +520,28 @@
     const soundSlash = document.getElementById("soundSlash");
     const sceneButtons = document.querySelectorAll("[data-scene-choice]");
     const tapHint = document.querySelector(".tap-hint");
-    const tapMessages = [
-      "善念加一，心安加一",
-      "愿你今天诸事顺遂",
-      "把烦恼轻轻放下",
-      "积一份善意，添一份从容",
-      "此刻安然，便是福气",
-      "愿努力都有回响"
+    const bottomBlessing = document.getElementById("bottomBlessing");
+    const blessingOpeners = [
+      "愿你今天，", "愿你此刻，", "愿你往后的日子，", "愿你每一个清晨，", "愿你每一个夜晚，",
+      "愿你忙碌的时候，", "愿你停下脚步时，", "愿你出发的路上，", "愿你归来的途中，", "愿你遇见风雨时，",
+      "愿你迎来晴天时，", "愿你认真生活时，", "愿你感到疲惫时，", "愿你勇敢选择时，", "愿你温柔待人时，",
+      "愿你独处片刻时，", "愿你与人同行时，", "愿你春日里，", "愿你夏日里，", "愿你秋日里，",
+      "愿你冬日里，", "愿你心生欢喜时，", "愿你暂遇挫折时，", "愿你得偿所愿时，", "愿你平凡的日子里，",
+      "愿你每段旅程中，", "愿你所念所想，", "愿你每次努力后，", "愿你重新开始时，", "愿你偶尔回望时，"
     ];
-    const tapVoiceFiles = [
-      "merit-message-01.wav",
-      "merit-message-02.wav",
-      "merit-message-03.wav",
-      "merit-message-04.wav",
-      "merit-message-05.wav",
-      "merit-message-06.wav"
+    const blessingClosers = [
+      "常有一份安宁相伴。", "总被温柔与善意以待。", "所行之路皆有微光。", "所盼之事渐有回响。",
+      "心中的烦恼慢慢散去。", "手边的小事都顺顺利利。", "眼前的风景都值得珍惜。", "付出的努力都不被辜负。",
+      "身边总有可信赖的人。", "每份欢喜都能细细回味。", "心中有方向，脚下有力量。", "平安喜乐常伴左右。"
     ];
+    // 两组各自无重复的短句组合成 360 条确定且唯一的祝福，作为一轮完整的提示内容。
+    const tapMessages = blessingOpeners.flatMap((opening) =>
+      blessingClosers.map((closing) => `${opening}${closing}`)
+    );
     let merit = readSavedMerit();
     let soundEnabled = true;
     let audioContext;
-    const meritVoice = document.getElementById("meritVoice");
-    let queuedVoiceCues = [];
+    const voiceQueue = [];
     let voicePlaying = false;
     let tapMessageIndex = 0;
 
@@ -584,37 +592,57 @@
       }
     }
 
-    // 快速连点时逐条播放语音，避免提示互相覆盖或丢失。
-    function playMeritVoice(messageIndex) {
+    // 浏览器直接朗读被显示的同一句祝福，避免维护文字与固定录音的映射表。
+    function speakBlessing(message) {
       if (!soundEnabled) return;
-      queuedVoiceCues.push(messageIndex);
-      if (!voicePlaying) playNextMeritVoice();
+      if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined") {
+        setTapMessage(message);
+        return;
+      }
+      voiceQueue.push(message);
+      if (!voicePlaying) speakNextBlessing();
     }
 
-    // 播放失败时清空队列，保证后续点击仍可重新触发语音。
-    function playNextMeritVoice() {
-      if (!soundEnabled || queuedVoiceCues.length === 0) {
+    // 快速敲击时按队列顺序朗读，并优先使用已安装的中文女声。
+    function speakNextBlessing() {
+      if (!soundEnabled || voiceQueue.length === 0) {
         voicePlaying = false;
         return;
       }
-      const messageIndex = queuedVoiceCues.shift();
+      const message = voiceQueue.shift();
       voicePlaying = true;
-      // 连敲时让屏幕文案跟随当前播报，而不是提前跳到队列末尾的内容。
-      setTapMessage(messageIndex);
-      // 每条语音与同索引的屏幕提示绑定，连敲队列不会串词。
-      meritVoice.src = tapVoiceFiles[messageIndex];
-      meritVoice.load();
-      meritVoice.play().catch(() => {
+      setTapMessage(message);
+
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = "zh-CN";
+      utterance.rate = 0.94;
+      utterance.pitch = 1.04;
+      const chineseVoices = window.speechSynthesis.getVoices().filter((voice) => voice.lang.startsWith("zh"));
+      utterance.voice = chineseVoices.find((voice) => /tingting|xiaoxiao|meijia|female|sandy|flo|shelley/i.test(voice.name))
+        || chineseVoices.find((voice) => voice.lang.toLowerCase() === "zh-cn")
+        || chineseVoices[0]
+        || null;
+
+      // 结束和失败都继续队列，避免某个系统语音错误让之后的祝福全部停播。
+      utterance.onend = finishBlessingSpeech;
+      utterance.onerror = finishBlessingSpeech;
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch {
         voicePlaying = false;
-        queuedVoiceCues = [];
-      });
+        speakNextBlessing();
+      }
     }
 
-    meritVoice.addEventListener("ended", playNextMeritVoice);
+    function finishBlessingSpeech() {
+      voicePlaying = false;
+      speakNextBlessing();
+    }
 
-    // 只在对应语音开始播放时更新提示，保持屏幕文字与声音同步。
-    function setTapMessage(messageIndex) {
-      tapHint.textContent = tapMessages[messageIndex];
+    // 两个展示位置只从这个入口更新，避免敲击提示与页脚祝福分叉。
+    function setTapMessage(message) {
+      tapHint.textContent = message;
+      bottomBlessing.textContent = message;
     }
 
     // 场景偏好也保存在本机，让页面下次打开仍回到用户选定的氛围。
@@ -656,10 +684,10 @@
       woodfish.append(increment);
       increment.addEventListener("animationend", () => increment.remove(), { once: true });
 
-      // 用固定轮换而非随机抽取，快速连敲时也能稳定看到不同祝福语。
-      const messageIndex = tapMessageIndex;
+      // 固定顺序可验证一轮长度，也能保证内容看完后再从头循环。
+      const message = tapMessages[tapMessageIndex];
       tapMessageIndex = (tapMessageIndex + 1) % tapMessages.length;
-      return messageIndex;
+      return message;
     }
 
     woodfish.addEventListener("click", () => {
@@ -667,23 +695,22 @@
       if (merit < Number.MAX_SAFE_INTEGER) merit += 1;
       renderMerit();
       persistMerit();
-      const messageIndex = showIncrement();
+      const message = showIncrement();
       woodfish.classList.remove("is-struck");
       requestAnimationFrame(() => woodfish.classList.add("is-struck"));
       window.setTimeout(() => woodfish.classList.remove("is-struck"), 140);
       playKnock();
-      if (soundEnabled) playMeritVoice(messageIndex);
-      else setTapMessage(messageIndex);
+      if (soundEnabled) speakBlessing(message);
+      else setTapMessage(message);
     });
 
     soundToggle.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
       if (!soundEnabled) {
         // 静音时立即中断正在播放的提示并丢弃积压，避免恢复声音后播出旧队列。
-        queuedVoiceCues = [];
+        voiceQueue.length = 0;
         voicePlaying = false;
-        meritVoice.pause();
-        meritVoice.currentTime = 0;
+        window.speechSynthesis?.cancel();
       }
       soundWave.style.display = soundEnabled ? "" : "none";
       soundSlash.style.display = soundEnabled ? "none" : "";
