@@ -501,7 +501,7 @@
   </main>
 
   <!-- 与单页同目录发布，避免托管路径变化时语音资源丢失。 -->
-  <audio id="meritVoice" src="gongde-plus-one.wav" preload="auto" aria-hidden="true"></audio>
+  <audio id="meritVoice" src="merit-message-01.wav" preload="auto" aria-hidden="true"></audio>
 
   <script>
     // 计数写入失败时仍维持本次访问内的功能，避免隐私模式或存储受限时按钮失效。
@@ -514,18 +514,26 @@
     const sceneButtons = document.querySelectorAll("[data-scene-choice]");
     const tapHint = document.querySelector(".tap-hint");
     const tapMessages = [
-      "善念 +1，心安 +1",
+      "善念加一，心安加一",
       "愿你今天诸事顺遂",
       "把烦恼轻轻放下",
       "积一份善意，添一份从容",
       "此刻安然，便是福气",
       "愿努力都有回响"
     ];
+    const tapVoiceFiles = [
+      "merit-message-01.wav",
+      "merit-message-02.wav",
+      "merit-message-03.wav",
+      "merit-message-04.wav",
+      "merit-message-05.wav",
+      "merit-message-06.wav"
+    ];
     let merit = readSavedMerit();
     let soundEnabled = true;
     let audioContext;
     const meritVoice = document.getElementById("meritVoice");
-    let queuedVoiceCues = 0;
+    let queuedVoiceCues = [];
     let voicePlaying = false;
     let tapMessageIndex = 0;
 
@@ -577,28 +585,37 @@
     }
 
     // 快速连点时逐条播放语音，避免提示互相覆盖或丢失。
-    function playMeritVoice() {
+    function playMeritVoice(messageIndex) {
       if (!soundEnabled) return;
-      queuedVoiceCues += 1;
+      queuedVoiceCues.push(messageIndex);
       if (!voicePlaying) playNextMeritVoice();
     }
 
     // 播放失败时清空队列，保证后续点击仍可重新触发语音。
     function playNextMeritVoice() {
-      if (!soundEnabled || queuedVoiceCues === 0) {
+      if (!soundEnabled || queuedVoiceCues.length === 0) {
         voicePlaying = false;
         return;
       }
-      queuedVoiceCues -= 1;
+      const messageIndex = queuedVoiceCues.shift();
       voicePlaying = true;
-      meritVoice.currentTime = 0;
+      // 连敲时让屏幕文案跟随当前播报，而不是提前跳到队列末尾的内容。
+      setTapMessage(messageIndex);
+      // 每条语音与同索引的屏幕提示绑定，连敲队列不会串词。
+      meritVoice.src = tapVoiceFiles[messageIndex];
+      meritVoice.load();
       meritVoice.play().catch(() => {
         voicePlaying = false;
-        queuedVoiceCues = 0;
+        queuedVoiceCues = [];
       });
     }
 
     meritVoice.addEventListener("ended", playNextMeritVoice);
+
+    // 只在对应语音开始播放时更新提示，保持屏幕文字与声音同步。
+    function setTapMessage(messageIndex) {
+      tapHint.textContent = tapMessages[messageIndex];
+    }
 
     // 场景偏好也保存在本机，让页面下次打开仍回到用户选定的氛围。
     function restoreScene() {
@@ -640,8 +657,9 @@
       increment.addEventListener("animationend", () => increment.remove(), { once: true });
 
       // 用固定轮换而非随机抽取，快速连敲时也能稳定看到不同祝福语。
-      tapHint.textContent = tapMessages[tapMessageIndex];
+      const messageIndex = tapMessageIndex;
       tapMessageIndex = (tapMessageIndex + 1) % tapMessages.length;
+      return messageIndex;
     }
 
     woodfish.addEventListener("click", () => {
@@ -649,19 +667,20 @@
       if (merit < Number.MAX_SAFE_INTEGER) merit += 1;
       renderMerit();
       persistMerit();
-      showIncrement();
+      const messageIndex = showIncrement();
       woodfish.classList.remove("is-struck");
       requestAnimationFrame(() => woodfish.classList.add("is-struck"));
       window.setTimeout(() => woodfish.classList.remove("is-struck"), 140);
       playKnock();
-      playMeritVoice();
+      if (soundEnabled) playMeritVoice(messageIndex);
+      else setTapMessage(messageIndex);
     });
 
     soundToggle.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
       if (!soundEnabled) {
         // 静音时立即中断正在播放的提示并丢弃积压，避免恢复声音后播出旧队列。
-        queuedVoiceCues = 0;
+        queuedVoiceCues = [];
         voicePlaying = false;
         meritVoice.pause();
         meritVoice.currentTime = 0;
